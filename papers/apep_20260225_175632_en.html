@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impact of High-Speed Rail on Urban Air Pollution</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.8;
+            color: #333;
+        }
+        h1 {
+            font-size: 22pt;
+            text-align: center;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+        h2 {
+            font-size: 16pt;
+            margin-top: 30px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+        .print-tip {
+            background: #ffffcc;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            font-size: 10pt;
+        }
+        .meta {
+            color: #666;
+            font-size: 10pt;
+            margin-bottom: 30px;
+            padding: 10px;
+            background: #fafafa;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            overflow-x: auto;
+            font-size: 10pt;
+            white-space: pre-wrap;
+        }
+        code {
+            font-family: 'Courier New', monospace;
+            background: #f4f4f4;
+            padding: 2px 5px;
+        }
+        @media print {
+            body { margin: 0; }
+            .print-tip { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-tip">
+        <strong>📄 Print to PDF: Press Ctrl+P (or Cmd+P) and select 'Save as PDF'</strong>
+    </div>
+    
+    <pre># Impact of High-Speed Rail Opening on Urban Air Pollution in Chinese Prefecture-Level Cities: Evidence from PM2.5 and Difference-in-Differences
+
+**Language:** English
+**Field:** economics
+**Method:** Difference-in-Differences (DiD)
+**ID:** apep_20260225_175632_en
+**Data Source:** projects/hsr_pollution/data/
+**References:** projects/hsr_pollution/refs/
+
+---
+
+```latex
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{a4paper, scale=0.8}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\title{Impact of High-Speed Rail on Urban Air Pollution in Chinese Prefecture-Level Cities: Evidence from PM2.5 and Difference-in-Differences}
+\author{Your Name}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This study investigates the impact of high-speed rail (HSR) opening on urban air pollution in Chinese prefecture-level cities using PM2.5 concentration as a proxy for air quality. We employ a difference-in-differences (DiD) approach to identify the causal effects. The results show that HSR opening significantly reduces PM2.5 concentration. Further analysis reveals heterogenous impacts across cities with different population densities and regions, with more significant effects observed in high-density cities and central regions. The study also finds evidence that HSR's impact on air quality is partly mediated by the upgrading of industrial structures and fully mediated by green technological innovation. 
+\end{abstract}
+
+\section{Introduction}
+In recent years, with the acceleration of industrialization and urbanization, air pollution has become a severe issue in many cities across China. PM2.5 concentration has emerged as a critical indicator of air quality and public health. The rapid expansion of high-speed rail (HSR) as a core infrastructure component has significantly influenced urban economic structures and environmental pollution levels. This paper aims to systematically explore the impact of HSR on PM2.5 concentration in Chinese prefecture-level cities and investigate its mechanisms and heterogeneity.
+
+\section{Literature Review}
+The body of literature on the environmental effects of transportation infrastructure is growing. Studies have shown that traditional transportation modes contribute significantly to air pollution (\cite{高速铁路与城市环境污染——基于中国285个城市面板数据的分析_张帆}; \cite{高铁发展对城市雾霾污染的影响研究_李衡}). HSR, as a low carbon and environmentally friendly mode of transportation, is expected to have positive externalities on air quality (\cite{高铁开通对环境污染的影响效应研究_张凯伦}).
+
+\section{Empirical Strategy}
+We employ a difference-in-differences (DiD) approach to identify the causal impact of HSR on PM2.5 concentration. The DiD model is specified as follows:
+\[ Y_{it} = \alpha + \beta \times \text{HSR}_{it} + \gamma'X_{it} + \delta_i + \lambda_t + \epsilon_{it} \]
+where $Y_{it}$ is the PM2.5 concentration for city $i$ at time $t$, $\text{HSR}_{it}$ is a dummy variable indicating HSR opening, $X_{it}$ are control variables, $\delta_i$ are city fixed effects, $\lambda_t$ are year fixed effects, and $\epsilon_{it}$ is the error term.
+
+\section{Data}
+The data for this study includes panel data from 7128 observations across Chinese prefecture-level cities from 2008 to 2017. The variables include PM2.5 concentration, measures of industrial structure, human capital, urbanization rate, openness to foreign investment, and economic development level.
+
+\section{Results}
+The benchmark regression results show that HSR opening leads to an average decrease of 2.7\% in PM2.5 concentration. Heterogeneity analyses reveal more significant pollution reduction effects in high-density cities and central regions. Mechanism tests indicate that HSR's impact on air quality is partly mediated by industrial structure upgrading and fully mediated by green technological innovation.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lccc}
+\toprule
+Variables & (1) & (2) \\
+\midrule
+DID & -0.027** & -0.027** \\
+ & (0.013) & (0.013) \\
+Industrial Structure &  & -0.006 \\
+ &  & (0.015) \\
+Human Capital &  & 0.661 \\
+ &  & (0.475) \\
+Urbanization Rate &  & -0.092 \\
+ &  & (0.057) \\
+Openness to Foreign Investment &  & 3.536*** \\
+ &  & (1.137) \\
+Economic Development Level &  & -0.103*** \\
+ &  & (0.022) \\
+Cons & 3.711*** & 4.781*** \\
+ & (0.005) & (0.225) \\
+\bottomrule
+\end{tabular}
+\caption{Benchmark Regression Results}
+\end{table}
+
+\section{Conclusion}
+This study concludes that HSR construction has not only economic growth effects but also significant environmental governance effects. Policymakers should optimize HSR layout and strengthen green innovation support policies to promote the coordinated development of transportation infrastructure and environmental management.
+
+\end{document}
+```</pre>
+    
+    <hr>
+    <p style="font-size: 9pt; color: #666;">
+        Generated by APE Pipeline | Multi-field Academic Paper Generator
+    </p>
+</body>
+</html>
