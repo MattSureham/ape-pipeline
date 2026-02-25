@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-APE Paper Generator - Multi-Field Support
-Generates academic papers for various fields
+APE Paper Generator with Chinese Language Support
+Generates academic papers in English or Chinese
 """
 
 import os
@@ -58,70 +58,6 @@ class MoonshotProvider:
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]
 
-def get_field_config(field):
-    """Get configuration for different academic fields"""
-    
-    configs = {
-        "economics": {
-            "journal": "AER/QJE",
-            "structure": ["Title", "Abstract", "Introduction", "Literature Review", "Empirical Strategy", "Data", "Results", "Conclusion"],
-            "format": "LaTeX",
-            "method_examples": "DiD, RDD, IV, RCT",
-            "style": "Rigorous empirical analysis with causal identification"
-        },
-        "psychology": {
-            "journal": "JPSP/Psychological Science",
-            "structure": ["Title", "Abstract", "Introduction", "Method", "Results", "Discussion", "References"],
-            "format": "APA style",
-            "method_examples": "Experiment, Survey, Meta-analysis, Longitudinal",
-            "style": "Clear hypothesis testing with statistical rigor"
-        },
-        "computer_science": {
-            "journal": "ACM/IEEE",
-            "structure": ["Title", "Abstract", "Introduction", "Related Work", "Method/Algorithm", "Experiments", "Results", "Conclusion"],
-            "format": "LaTeX with code",
-            "method_examples": "Algorithm design, Benchmark evaluation, A/B testing",
-            "style": "Novel contribution with reproducible experiments"
-        },
-        "medicine": {
-            "journal": "NEJM/Lancet",
-            "structure": ["Title", "Abstract", "Background", "Methods", "Results", "Discussion", "Conclusion"],
-            "format": "IMRaD format",
-            "method_examples": "RCT, Cohort study, Case-control, Systematic review",
-            "style": "Evidence-based with clinical significance"
-        },
-        "sociology": {
-            "journal": "AJS/ASR",
-            "structure": ["Title", "Abstract", "Introduction", "Theory", "Data/Methods", "Findings", "Discussion", "Conclusion"],
-            "format": "Standard academic",
-            "method_examples": "Ethnography, Survey, Interview, Content analysis",
-            "style": "Theoretically grounded with rich description"
-        },
-        "political_science": {
-            "journal": "APSR/AJPS",
-            "structure": ["Title", "Abstract", "Introduction", "Theory", "Research Design", "Analysis", "Results", "Conclusion"],
-            "format": "Standard academic",
-            "method_examples": "Quantitative analysis, Case study, Text analysis",
-            "style": "Theory-driven with political relevance"
-        },
-        "education": {
-            "journal": "AERA/Review of Educational Research",
-            "structure": ["Title", "Abstract", "Introduction", "Literature Review", "Methodology", "Findings", "Discussion", "Implications"],
-            "format": "APA style",
-            "method_examples": "Quasi-experiment, Survey, Interview, Mixed methods",
-            "style": "Practice-relevant with policy implications"
-        },
-        "environmental_science": {
-            "journal": "Nature Climate Change/Science",
-            "structure": ["Title", "Abstract", "Introduction", "Methods", "Results", "Discussion", "Conclusion"],
-            "format": "Scientific",
-            "method_examples": "Modeling, Field measurements, Remote sensing, Lab experiments",
-            "style": "Data-driven with environmental significance"
-        }
-    }
-    
-    return configs.get(field.lower(), configs["economics"])
-
 def load_file_or_directory(path, is_data=True):
     """Load content from file or directory"""
     if not path:
@@ -143,18 +79,39 @@ def load_file_or_directory(path, is_data=True):
         print(f"⚠️  Path not found: {path}")
         return ""
 
-def generate_paper(question, field="economics", method="", data_path=None, refs_path=None):
-    """Generate academic paper for any field"""
+def get_field_config(field, language="english"):
+    """Get configuration for different fields and languages"""
     
-    # Get field configuration
-    config = get_field_config(field)
+    if language == "chinese":
+        configs = {
+            "economics": {
+                "journal": "《经济研究》/《管理世界》",
+                "structure": ["标题", "摘要", "引言", "文献综述", "研究设计", "数据与实证", "结果分析", "结论与政策建议"],
+                "format": "中文学术论文格式",
+                "style": "严谨的因果识别分析，符合国内顶级经济学期刊规范"
+            }
+        }
+    else:
+        configs = {
+            "economics": {
+                "journal": "AER/QJE",
+                "structure": ["Title", "Abstract", "Introduction", "Literature Review", "Empirical Strategy", "Data", "Results", "Conclusion"],
+                "format": "LaTeX",
+                "style": "Rigorous empirical analysis with causal identification"
+            }
+        }
     
-    # Load data and references
-    print("📂 Loading data/references...")
+    return configs.get(field.lower(), configs["economics"])
+
+def generate_paper(question, field="economics", method="", data_path=None, refs_path=None, language="english"):
+    """Generate academic paper in specified language"""
+    
+    config = get_field_config(field, language)
+    
+    print(f"📂 Loading data/references...")
     data_content = load_file_or_directory(data_path, is_data=True) if data_path else ""
     refs_content = load_file_or_directory(refs_path, is_data=False) if refs_path else ""
     
-    # Use Moonshot
     api_key = os.getenv("MOONSHOT_API_KEY")
     if not api_key:
         print("❌ MOONSHOT_API_KEY not set")
@@ -162,70 +119,101 @@ def generate_paper(question, field="economics", method="", data_path=None, refs_
     
     ai = MoonshotProvider(api_key=api_key)
     
-    # Build field-specific system prompt
-    system_prompt = f"""You are an expert researcher writing for top {field} journals ({config['journal']}).
+    if language == "chinese":
+        system_prompt = f"""你是一位顶尖经济学家，为{config['journal']}撰写论文。
+
+论文结构：{', '.join(config['structure'])}
+格式：{config['format']}
+风格：{config['style']}
+
+重要：使用提供的中文数据。不要编造数字。
+如果提供了中文文献，请在文献综述中引用。"""
+
+        prompt = f"""研究题目：{question}
+
+研究方法：{method if method else '双重差分法 (DiD)'}
+"""
+        
+        if data_content:
+            prompt += f"""
+
+研究数据：
+```
+{data_content[:8000]}
+```"""
+        
+        if refs_content:
+            prompt += f"""
+
+参考文献：
+```
+{refs_content[:5000]}
+```"""
+        
+        prompt += f"""
+
+请生成完整的中文经济学论文，包括：
+{chr(10).join([f"{i+1}. {section}" for i, section in enumerate(config['structure'])])}
+
+使用规范的学术中文写作。包含DiD模型的数学公式。
+在文献综述中引用提供的中文参考文献。"""
+
+    else:  # English
+        system_prompt = f"""You are an expert economist writing for {config['journal']}.
 
 Paper Structure: {', '.join(config['structure'])}
 Format: {config['format']}
 Style: {config['style']}
 
-Methodology examples for this field: {config['method_examples']}
+Use the provided REAL DATA. Do not fabricate numbers."""
 
-CRITICAL: Use the provided REAL DATA. Do not fabricate numbers."""
+        prompt = f"""Research Question: {question}
 
-    # Build prompt
-    prompt = f"""Research Question: {question}
+Methodology: {method if method else 'Difference-in-Differences (DiD)'}
+"""
+        
+        if data_content:
+            prompt += f"""
 
-Field: {field}
-Methodology: {method if method else 'Appropriate for the field'}"""
-    
-    if data_content:
-        prompt += f"""
-
-REAL DATA TO INCORPORATE:
+REAL DATA:
 ```
 {data_content[:8000]}
 ```"""
-    
-    if refs_content:
-        prompt += f"""
+        
+        if refs_content:
+            prompt += f"""
 
-REFERENCES TO CITE:
+REFERENCES:
 ```
 {refs_content[:5000]}
 ```"""
-    
-    prompt += f"""
+        
+        prompt += f"""
 
-Generate a complete {field} research paper with:
+Generate a complete economics research paper with:
 {chr(10).join([f"{i+1}. {section}" for i, section in enumerate(config['structure'])])}
 
-Use {config['format']} formatting appropriate for the field."""
+Use LaTeX formatting. Include DiD methodology formulas."""
     
-    print(f"📝 Generating {field} paper: {question}")
-    if method:
-        print(f"   Method: {method}")
-    if data_path:
-        print(f"   Data: {data_path}")
-    if refs_path:
-        print(f"   References: {refs_path}")
+    lang_display = "Chinese" if language == "chinese" else "English"
+    print(f"📝 Generating {lang_display} paper: {question}")
     
     try:
         paper = ai.generate(prompt, system_prompt, max_tokens=8192)
         
-        # Save paper
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        paper_id = f"apep_{timestamp}"
+        lang_code = "zh" if language == "chinese" else "en"
+        paper_id = f"apep_{timestamp}_{lang_code}"
+        
         papers_dir = Path(__file__).parent.parent / "papers"
         papers_dir.mkdir(exist_ok=True)
         
         filepath = papers_dir / f"{paper_id}.md"
         with open(filepath, 'w') as f:
             f.write(f"# {question}\n\n")
+            f.write(f"**Language:** {lang_display}\n")
             f.write(f"**Field:** {field}\n")
-            if method:
-                f.write(f"**Method:** {method}\n")
-            f.write(f"**Provider:** moonshot\n")
+            f.write(f"**Method:** {method if method else 'DiD'}\n")
             f.write(f"**ID:** {paper_id}\n")
             if data_path:
                 f.write(f"**Data Source:** {data_path}\n")
@@ -234,7 +222,7 @@ Use {config['format']} formatting appropriate for the field."""
             f.write("\n---\n\n")
             f.write(paper)
         
-        print(f"✅ Paper saved: {filepath}")
+        print(f"✅ {lang_display} paper saved: {filepath}")
         print(f"   ID: {paper_id}")
         return paper_id
         
@@ -244,28 +232,9 @@ Use {config['format']} formatting appropriate for the field."""
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("APE Multi-Field Paper Generator")
-        print("==============================")
+        print("Usage: python generate_paper.py 'Question' [field] [method] [data_path] [refs_path] [language]")
         print("")
-        print("Usage:")
-        print("  python generate_paper.py 'Question' [field] [method] [data_path] [refs_path]")
-        print("")
-        print("Supported fields:")
-        print("  economics, psychology, computer_science, medicine,")
-        print("  sociology, political_science, education, environmental_science")
-        print("")
-        print("Examples:")
-        print('  # Economics (default)')
-        print('  python generate_paper.py "Min wage effects" economics DiD data/ refs/')
-        print("")
-        print('  # Psychology')
-        print('  python generate_paper.py "Social media impact on anxiety" psychology "Survey experiment" data/ refs/')
-        print("")
-        print('  # Computer Science')
-        print('  python generate_paper.py "New sorting algorithm" computer_science "Benchmark evaluation" data/ refs/')
-        print("")
-        print('  # Medicine')
-        print('  python generate_paper.py "Drug effectiveness" medicine "RCT" data/ refs/')
+        print("Language: english (default) or chinese")
         sys.exit(1)
     
     question = sys.argv[1]
@@ -273,5 +242,6 @@ if __name__ == "__main__":
     method = sys.argv[3] if len(sys.argv) > 3 else ""
     data_path = sys.argv[4] if len(sys.argv) > 4 else None
     refs_path = sys.argv[5] if len(sys.argv) > 5 else None
+    language = sys.argv[6] if len(sys.argv) > 6 else "english"
     
-    generate_paper(question, field, method, data_path, refs_path)
+    generate_paper(question, field, method, data_path, refs_path, language)
