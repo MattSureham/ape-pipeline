@@ -1,0 +1,14 @@
+CAJ Reference (Chinese Academic Journal)
+========================================
+
+File: wang_2023_employment.caj
+Journal: 中国高教研究 (China Higher Education Research)
+Title: 高校毕业生就业影响因素研究
+Authors: 王伟, 李明
+Year: 2023
+Volume: 45(3)
+Pages: 45-58
+
+Abstract: This study examines factors affecting graduate employment in Chinese universities...
+
+Note: Full text available in CAJ format. Requires CAJViewer for complete access.

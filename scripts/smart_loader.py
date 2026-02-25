@@ -4,14 +4,15 @@ Smart Data/References Loader
 Handles directories and multiple file formats
 
 Supports:
-- Data: CSV, JSON, TXT, MD, Excel (.xlsx, .xls)
-- References: PDF, TXT, MD, DOCX (if available)
+- Data: CSV, JSON, TXT, MD, Excel (.xlsx, .xls), DOCX
+- References: PDF, TXT, MD, DOCX, CAJ (Chinese Academic Journals)
 """
 
 import os
 import sys
 import json
 import csv
+import subprocess
 from pathlib import Path
 
 # Optional imports
@@ -39,8 +40,9 @@ class SmartLoader:
     
     def __init__(self, directory, is_data_dir=True):
         self.dir = Path(directory)
-        self.is_data_dir = is_data_dir  # True for data, False for references
+        self.is_data_dir = is_data_dir
         self.content = []
+        self.warnings = []
     
     def load_all(self):
         """Load all supported files from directory"""
@@ -56,7 +58,13 @@ class SmartLoader:
                 self._process_file(f)
         
         result = "\n\n".join(self.content) if self.content else ""
-        print(f"   Files loaded: {len(self.content)}")
+        
+        # Print summary
+        print(f"   ✅ Files loaded: {len(self.content)}")
+        if self.warnings:
+            print(f"   ⚠️  Warnings: {len(self.warnings)}")
+            for w in self.warnings[:3]:
+                print(f"      - {w}")
         
         return result
     
@@ -72,16 +80,26 @@ class SmartLoader:
                 self._load_json(filepath)
             elif ext in ['.xlsx', '.xls'] and HAS_PANDAS:
                 self._load_excel(filepath)
+            elif ext == '.docx' and HAS_DOCX:
+                self._load_docx_data(filepath)
             elif ext in ['.txt', '.md', '.data']:
                 self._load_text(filepath)
+            elif ext == '.caj':
+                self._handle_caj(filepath, is_data=True)
+            else:
+                self.warnings.append(f"Unsupported format: {filepath.name}")
         else:
             # Loading reference files
             if ext == '.pdf' and HAS_PYPDF2:
                 self._load_pdf(filepath)
             elif ext == '.docx' and HAS_DOCX:
-                self._load_docx(filepath)
+                self._load_docx_refs(filepath)
+            elif ext == '.caj':
+                self._handle_caj(filepath, is_data=False)
             elif ext in ['.txt', '.md', '.bib', '.refs']:
                 self._load_text(filepath)
+            else:
+                self.warnings.append(f"Unsupported format: {filepath.name}")
     
     def _load_csv(self, filepath):
         """Load CSV file"""
@@ -102,7 +120,7 @@ class SmartLoader:
                 self.content.append(content)
                 print(f"   📊 Loaded CSV: {filepath.name}")
         except Exception as e:
-            print(f"   ⚠️  Error loading {filepath.name}: {e}")
+            self.warnings.append(f"CSV error {filepath.name}: {e}")
     
     def _load_json(self, filepath):
         """Load JSON file"""
@@ -117,7 +135,7 @@ class SmartLoader:
             self.content.append(content)
             print(f"   📊 Loaded JSON: {filepath.name}")
         except Exception as e:
-            print(f"   ⚠️  Error loading {filepath.name}: {e}")
+            self.warnings.append(f"JSON error {filepath.name}: {e}")
     
     def _load_excel(self, filepath):
         """Load Excel file"""
@@ -128,11 +146,69 @@ class SmartLoader:
             self.content.append(content)
             print(f"   📊 Loaded Excel: {filepath.name}")
         except Exception as e:
-            print(f"   ⚠️  Error loading {filepath.name}: {e}")
+            self.warnings.append(f"Excel error {filepath.name}: {e}")
+    
+    def _load_docx_data(self, filepath):
+        """Load DOCX as data source"""
+        if not HAS_DOCX:
+            self.warnings.append("python-docx not installed")
+            return
+        
+        try:
+            doc = Document(filepath)
+            text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+            
+            # Try to extract tables
+            tables_data = []
+            for table in doc.tables[:3]:  # First 3 tables
+                table_data = []
+                for row in table.rows:
+                    row_data = [cell.text for cell in row.cells]
+                    table_data.append(row_data)
+                tables_data.append(table_data)
+            
+            content = f"### Data from {filepath.name}\n\n"
+            
+            # Add tables if found
+            if tables_data:
+                for i, table in enumerate(tables_data):
+                    if table:
+                        content += f"**Table {i+1}:**\n\n"
+                        content += "| " + " | ".join(table[0]) + " |\n"
+                        content += "|" + "|".join(["---" for _ in table[0]]) + "|\n"
+                        for row in table[1:15]:
+                            content += "| " + " | ".join(row) + " |\n"
+                        content += "\n"
+            
+            # Add text content
+            if text:
+                content += f"**Notes:**\n\n{text[:3000]}\n"
+            
+            self.content.append(content)
+            print(f"   📄 Loaded DOCX (data): {filepath.name}")
+        except Exception as e:
+            self.warnings.append(f"DOCX error {filepath.name}: {e}")
+    
+    def _load_docx_refs(self, filepath):
+        """Load DOCX as references"""
+        if not HAS_DOCX:
+            self.warnings.append("python-docx not installed")
+            return
+        
+        try:
+            doc = Document(filepath)
+            text = "\n".join([para.text for para in doc.paragraphs if para.text.strip()])
+            
+            content = f"### Reference from {filepath.name}\n\n{text[:8000]}"
+            self.content.append(content)
+            print(f"   📄 Loaded DOCX (refs): {filepath.name}")
+        except Exception as e:
+            self.warnings.append(f"DOCX error {filepath.name}: {e}")
     
     def _load_pdf(self, filepath):
         """Extract text from PDF"""
         if not HAS_PYPDF2:
+            self.warnings.append("PyPDF2 not installed")
             return
         
         try:
@@ -146,35 +222,82 @@ class SmartLoader:
             self.content.append(content)
             print(f"   📄 Loaded PDF: {filepath.name}")
         except Exception as e:
-            print(f"   ⚠️  Error loading {filepath.name}: {e}")
+            self.warnings.append(f"PDF error {filepath.name}: {e}")
     
-    def _load_docx(self, filepath):
-        """Load Word document"""
-        if not HAS_DOCX:
-            return
+    def _handle_caj(self, filepath, is_data=False):
+        """Handle CAJ (Chinese Academic Journal) files"""
+        label = "Data" if is_data else "Reference"
         
-        try:
-            doc = Document(filepath)
-            text = "\n".join([para.text for para in doc.paragraphs])
-            
-            content = f"### Reference from {filepath.name}\n\n{text[:8000]}"
-            self.content.append(content)
-            print(f"   📄 Loaded DOCX: {filepath.name}")
-        except Exception as e:
-            print(f"   ⚠️  Error loading {filepath.name}: {e}")
+        # Check for conversion tools
+        caj2pdf = subprocess.run(['which', 'caj2pdf'], capture_output=True).returncode == 0
+        
+        if caj2pdf:
+            try:
+                # Try to convert CAJ to PDF
+                temp_pdf = filepath.with_suffix('.pdf')
+                subprocess.run(['caj2pdf', '-i', str(filepath), '-o', str(temp_pdf)], 
+                              check=True, capture_output=True, timeout=30)
+                
+                if temp_pdf.exists() and HAS_PYPDF2:
+                    text = ""
+                    with open(temp_pdf, 'rb') as f:
+                        reader = PyPDF2.PdfReader(f)
+                        for page in reader.pages[:5]:
+                            text += page.extract_text() + "\n"
+                    
+                    content = f"### {label} from {filepath.name} (CAJ converted)\n\n{text[:8000]}"
+                    self.content.append(content)
+                    print(f"   📄 Loaded CAJ (converted): {filepath.name}")
+                    
+                    # Clean up temp file
+                    temp_pdf.unlink()
+                    return
+            except Exception as e:
+                pass  # Fall through to metadata-only
+        
+        # If conversion fails, extract metadata only
+        content = f"""### {label} from {filepath.name} (CAJ format)
+
+**Note:** This is a CAJ (Chinese Academic Journal) file.
+
+**File:** {filepath.name}
+**Size:** {filepath.stat().st_size / 1024:.1f} KB
+
+CAJ files require CNKI (China National Knowledge Infrastructure) tools to extract full text.
+To use this reference, please:
+1. Open in CAJViewer and export to PDF, or
+2. Use caj2pdf tool: `pip install caj2pdf`
+
+**Citation placeholder:** [{filepath.stem} - Chinese Academic Journal]
+"""
+        self.content.append(content)
+        self.warnings.append(f"CAJ file requires manual conversion: {filepath.name}")
+        print(f"   ⚠️  CAJ metadata only: {filepath.name}")
     
     def _load_text(self, filepath):
         """Load plain text file"""
         try:
-            with open(filepath, 'r', encoding='utf-8') as f:
-                text = f.read()
+            # Try different encodings
+            encodings = ['utf-8', 'gbk', 'gb2312', 'latin-1']
+            text = None
+            
+            for enc in encodings:
+                try:
+                    with open(filepath, 'r', encoding=enc) as f:
+                        text = f.read()
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if text is None:
+                raise UnicodeDecodeError("All encodings failed")
             
             label = "Data" if self.is_data_dir else "Reference"
             content = f"### {label} from {filepath.name}\n\n{text[:8000]}"
             self.content.append(content)
             print(f"   📄 Loaded {label.lower()}: {filepath.name}")
         except Exception as e:
-            print(f"   ⚠️  Error loading {filepath.name}: {e}")
+            self.warnings.append(f"Text error {filepath.name}: {e}")
 
 
 def load_directory(data_dir=None, refs_dir=None):
