@@ -1,22 +1,36 @@
 # APE Pipeline - Complete Deployment & Usage Handbook
 
 ## Table of Contents
-1. [Prerequisites](#prerequisites)
-2. [Installation](#installation)
-3. [Configuration](#configuration)
-4. [Basic Usage](#basic-usage)
-5. [Advanced Features](#advanced-features)
-6. [Troubleshooting](#troubleshooting)
+1. [Overview](#overview)
+2. [Prerequisites](#prerequisites)
+3. [Installation](#installation)
+4. [Configuration](#configuration)
+5. [Basic Usage](#basic-usage)
+6. [Advanced Features](#advanced-features)
+7. [Troubleshooting](#troubleshooting)
+
+---
+
+## Overview
+
+APE Pipeline is a multi-field academic paper generation system that supports:
+- 8 academic disciplines with field-specific formatting
+- Multi-format data loading (CSV, JSON, Excel, DOCX, PDF, CAJ)
+- Bilingual paper generation (English/Chinese)
+- AI-powered review and tournament ranking
+- Cross-platform support (macOS, Linux, Windows)
 
 ---
 
 ## Prerequisites
 
 ### System Requirements
-- **OS**: macOS, Linux, or Windows with WSL
+- **OS**: macOS, Linux, or Windows (with Git Bash or PowerShell)
 - **Python**: 3.8 or higher
 - **Git**: For cloning the repository
 - **Internet**: For API calls to AI providers
+- **RAM**: 4GB minimum (8GB recommended)
+- **Storage**: 500MB for installation, plus space for papers
 
 ### Required Software
 ```bash
@@ -26,6 +40,11 @@ python3 --version  # Should be 3.8+
 # Check Git
 git --version
 ```
+
+### API Key Required
+You need an API key from Moonshot (Kimi):
+- Visit: https://platform.moonshot.cn
+- Create account → API Keys → Generate
 
 ---
 
@@ -41,10 +60,10 @@ git clone https://github.com/MattSureham/ape-pipeline.git
 cd ape-pipeline
 ```
 
-### Step 2: Install Dependencies
+### Step 2: Install Python Dependencies
 
 ```bash
-# Install Python dependencies
+# Required: Core dependency
 pip3 install requests
 
 # Optional: For Excel file support
@@ -60,48 +79,60 @@ pip3 install python-docx
 ### Step 3: Verify Installation
 
 ```bash
-# Check if main script is executable
+# Check if main script is executable (macOS/Linux)
 ls -la ape.sh
 
 # Test the help command
 ./ape.sh help
 ```
 
+**Windows Users**: Use `ape.ps1` instead:
+```powershell
+.\ape.ps1 help
+```
+
 ---
 
 ## Configuration
 
-### Step 1: Get API Key
-
-The pipeline uses Moonshot (Kimi) API by default:
-
-1. Go to https://platform.moonshot.cn
-2. Create an account
-3. Generate an API key
-4. Copy the key
-
-### Step 2: Configure API Key
+### Step 1: Create Config File
 
 ```bash
-# Edit the configuration file
-nano config/.env
+# Create the config directory if it doesn't exist
+mkdir -p config
+
+# Create the environment file
+# macOS/Linux:
+echo 'MOONSHOT_API_KEY="sk-your-actual-key-here"' > config/.env
+
+# Windows PowerShell:
+Set-Content -Path "config\.env" -Value 'MOONSHOT_API_KEY="sk-your-key"'
 ```
 
-Add your API key:
+### Step 2: Verify Configuration
+
+The `config/.env` file should look like:
 ```bash
-MOONSHOT_API_KEY="sk-your-actual-key-here"
+MOONSHOT_API_KEY="sk-your-actual-key-from-moonshot"
 ```
 
-**⚠️ IMPORTANT: Never commit this file to GitHub!** The `.gitignore` file is already configured to exclude it.
+**⚠️ IMPORTANT: Never commit this file to GitHub!**
+The `.gitignore` file is already configured to exclude it.
 
 ### Step 3: Test Configuration
 
 ```bash
 # Run a simple test
 ./ape.sh generate "Test paper" DiD
+
+# Expected output:
+# 📝 Generating paper: Test paper
+#    Method: DiD
+# ✅ Paper saved: papers/apep_20260225_123456.md
+#    ID: apep_20260225_123456
 ```
 
-If successful, you'll see a paper ID like `apep_20260225_xxxxxx`.
+If you see a paper ID, everything is working!
 
 ---
 
@@ -111,6 +142,11 @@ If successful, you'll see a paper ID like `apep_20260225_xxxxxx`.
 
 ```bash
 ./ape.sh [command] [arguments]
+```
+
+**Windows PowerShell:**
+```powershell
+.\ape.ps1 [command] [arguments]
 ```
 
 ### Available Commands
@@ -125,6 +161,7 @@ If successful, you'll see a paper ID like `apep_20260225_xxxxxx`.
 | `leaderboard` | View rankings | `./ape.sh leaderboard` |
 | `fields` | List supported fields | `./ape.sh fields` |
 | `setup` | Edit configuration | `./ape.sh setup` |
+| `help` | Show help | `./ape.sh help` |
 
 ### Example: Basic Paper Generation
 
@@ -145,8 +182,11 @@ If successful, you'll see a paper ID like `apep_20260225_xxxxxx`.
 # View in terminal
 cat papers/apep_20260225_123456.md
 
-# Or open in text editor
+# Or open in text editor (macOS)
 open papers/apep_20260225_123456.md
+
+# Or use VS Code
+code papers/apep_20260225_123456.md
 ```
 
 ---
@@ -165,10 +205,10 @@ Generate papers for different academic fields:
 ./ape.sh generate-field "Social media and anxiety" psychology "Survey"
 
 # Computer Science
-./ape.sh generate-field "New algorithm" computer_science "Benchmark"
+./ape.sh generate-field "New graph neural network" computer_science "Benchmark"
 
 # Medicine
-./ape.sh generate-field "Drug trial" medicine "RCT"
+./ape.sh generate-field "Drug X effectiveness" medicine "RCT"
 
 # Sociology
 ./ape.sh generate-field "Gentrification effects" sociology "Ethnography"
@@ -177,10 +217,10 @@ Generate papers for different academic fields:
 ./ape.sh generate-field "Voting behavior" political_science "Quantitative"
 
 # Education
-./ape.sh generate-field "Online learning" education "Quasi-experiment"
+./ape.sh generate-field "Online learning outcomes" education "Quasi-experiment"
 
 # Environmental Science
-./ape.sh generate-field "Climate change" environmental_science "Modeling"
+./ape.sh generate-field "Climate change impacts" environmental_science "Modeling"
 ```
 
 ### 2. Using Data Directories
@@ -191,19 +231,21 @@ Organize your project with separate data and references folders:
 # Create project structure
 mkdir -p myproject/data myproject/refs
 
-# Add data files (CSV, JSON, Excel, TXT, MD)
+# Add data files (CSV, JSON, Excel, TXT, MD, DOCX)
 cp my_data.csv myproject/data/
 cp policy_info.json myproject/data/
+cp experiment_notes.docx myproject/data/
 
 # Add reference files (PDF, TXT, MD, DOCX)
 cp references.pdf myproject/refs/
 cp bibliography.txt myproject/refs/
+cp paper.docx myproject/refs/
 
 # Generate paper with all files
 ./ape.sh generate-dir \
   "Impact of policy X on outcome Y" \
   economics \
-  DiD \
+  "Difference-in-Differences" \
   myproject/data/ \
   myproject/refs/
 ```
@@ -262,11 +304,9 @@ Get detailed feedback on papers:
 Generate papers in both languages:
 
 ```bash
-# Edit scripts/generate_paper.py or use the Python script directly
-
 # English paper
 python3 scripts/generate_paper.py \
-  "Impact of HSR on pollution" \
+  "Impact of HSR on urban air pollution" \
   economics \
   "DiD" \
   data/ \
@@ -275,7 +315,7 @@ python3 scripts/generate_paper.py \
 
 # Chinese paper
 python3 scripts/generate_paper.py \
-  "高铁开通对空气污染的影响研究" \
+  "高铁开通对城市空气污染的影响研究" \
   economics \
   "双重差分法" \
   data/ \
@@ -330,13 +370,14 @@ cp ~/Downloads/literature_review.pdf projects/my_research/refs/
 ### Method 1: Browser Print (Easiest)
 
 ```bash
-# Generate HTML version
+# Generate HTML first
 python3 scripts/md_to_pdf.py papers/apep_xxxxxx.md
 
 # Open in browser
-open papers/apep_xxxxxx.html
+open papers/apep_xxxxxx.html  # macOS
+start papers/apep_xxxxxx.html  # Windows
 
-# Then: Cmd + P → Save as PDF
+# Then press Ctrl+P (or Cmd+P) → Save as PDF
 ```
 
 ### Method 2: Pandoc (Best Quality)
@@ -344,7 +385,7 @@ open papers/apep_xxxxxx.html
 ```bash
 # Install pandoc and LaTeX
 brew install pandoc
-brew install --cask mactex
+brew install --cask mactex  # macOS
 
 # Convert to PDF
 pandoc papers/apep_xxxxxx.md -o paper.pdf \
@@ -354,9 +395,9 @@ pandoc papers/apep_xxxxxx.md -o paper.pdf \
 
 ### Method 3: VS Code Extension
 
-1. Install "Markdown PDF" extension
-2. Right-click .md file
-3. Select "Markdown PDF: Export (pdf)"
+1. Install VS Code: https://code.visualstudio.com/
+2. Install "Markdown PDF" extension
+3. Right-click .md file → Markdown PDF: Export (pdf)
 
 ---
 
@@ -398,7 +439,7 @@ chmod +x ape.sh
 
 **Solution:**
 CAJ files require manual conversion:
-1. Open in CAJViewer
+1. Open in CAJViewer (Windows software)
 2. Export to PDF
 3. Place PDF in refs/ directory
 
@@ -411,23 +452,49 @@ Or create a metadata text file with citation info.
 - Wait a few minutes and try again
 - Consider upgrading your Moonshot plan
 
+### Windows-Specific Issues
+
+**Execution Policy:**
+```powershell
+# Run as Administrator, then:
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Or bypass for this session:
+powershell -ExecutionPolicy Bypass -File .\ape.ps1
+```
+
+**Python not found:**
+```powershell
+# Try python3
+python3 scripts\generate_paper.py "test" economics DiD
+
+# Or use full path
+C:\Python39\python.exe scripts\generate_paper.py "test" economics DiD
+```
+
 ---
 
 ## Project Structure Reference
 
 ```
 ape-pipeline/
-├── ape.sh                    # Main control script
+├── README.md                 # Main documentation
+├── DEPLOYMENT.md             # This file
+├── WINDOWS.md                # Windows-specific guide
+├── CAJ-DOCX-GUIDE.md         # Chinese source handling
+├── MULTI-FIELD-EXAMPLES.md   # Field examples
+├── ape.sh                    # Main bash script (macOS/Linux)
+├── ape.ps1                   # PowerShell script (Windows)
 ├── config/
 │   └── .env                  # API keys (not committed)
 ├── scripts/
 │   ├── generate_paper.py     # Paper generator
 │   ├── review_paper.py       # Review system
 │   ├── tournament.py         # Tournament system
-│   ├── smart_loader.py       # File format loader
+│   ├── smart_loader.py       # Multi-format loader
 │   └── md_to_pdf.py          # PDF conversion
 ├── papers/                   # Generated papers
-│   ├── apep_xxxxxx.md        # Paper files
+│   ├── apep_*.md             # Paper files
 │   └── reviews/              # Review files
 ├── examples/                 # Example projects
 │   ├── data_dir/             # Sample data
@@ -457,37 +524,24 @@ ape-pipeline/
 
 ---
 
-## Getting Help
-
-- Check `ape.sh help` for command reference
-- See `ADVANCED-GUIDE.md` for detailed usage
-- See `CAJ-DOCX-GUIDE.md` for Chinese source handling
-- See `MULTI-FIELD-EXAMPLES.md` for field-specific examples
-
----
-
 ## Quick Reference Card
 
 ```bash
 # Deploy
- git clone https://github.com/MattSureham/ape-pipeline.git
- cd ape-pipeline
- pip3 install requests
- echo 'MOONSHOT_API_KEY="your-key"' > config/.env
+git clone https://github.com/MattSureham/ape-pipeline.git
+cd ape-pipeline
+pip3 install requests
+echo 'MOONSHOT_API_KEY="your-key"' > config/.env
 
 # Basic use
- ./ape.sh generate "Topic" DiD
+./ape.sh generate "Topic" DiD
+./ape.sh generate-dir "Topic" economics DiD data/ refs/
+./ape.sh review apep_xxx
+./ape.sh tournament apep_xxx apep_yyy
+./ape.sh leaderboard
 
-# With data
- ./ape.sh generate-dir "Topic" econ DiD data/ refs/
-
-# Review & compare
- ./ape.sh review apep_xxx
- ./ape.sh tournament apep_xxx apep_yyy
- ./ape.sh leaderboard
-
-# Convert to PDF
- open papers/apep_xxx.html  # Then Cmd+P → Save as PDF
+# Windows PowerShell
+.\ape.ps1 generate "Topic" DiD
 ```
 
 ---
